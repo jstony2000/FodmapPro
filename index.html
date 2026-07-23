@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FODMAP Pro</title>
+    
+    <!-- Metaetiquetas PWA -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#f3f4f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="FODMAP Pro">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%236366f1'/><text y='.9em' font-size='80' x='10'>🥝</text></svg>">
+
+    <style>
+        :root { --brand: #6366f1; --bg: #f3f4f6; --surface: #ffffff; --text-1: #111827; --text-2: #4b5563; --text-3: #9ca3af; --border: #e5e7eb; --green: #10b981; --green-bg: #ecfdf5; --red: #ef4444; --red-bg: #fef2f2; --yellow: #f59e0b; --yellow-bg: #fffbeb; --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --radius-lg: 16px; --safe-bottom: env(safe-area-inset-bottom, 20px); }
+        [data-theme="dark"] { --bg: #111827; --surface: #1f2937; --text-1: #f9fafb; --text-2: #d1d5db; --text-3: #6b7280; --border: #374151; --green-bg: rgba(16, 185, 129, 0.15); --red-bg: rgba(239, 68, 68, 0.15); --yellow-bg: rgba(245, 158, 11, 0.15); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; background: var(--bg); color: var(--text-1); margin: 0; padding: 0; padding-bottom: calc(80px + var(--safe-bottom)); transition: background-color 0.3s; user-select: none; }
+        .header { position: sticky; top: 0; background: var(--surface); padding: 16px 24px; z-index: 100; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); border-bottom: 1px solid var(--border); padding-top: env(safe-area-inset-top, 16px); }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 800; background: linear-gradient(135deg, var(--brand), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .theme-toggle { background: var(--bg); border: 1px solid var(--border); color: var(--text-1); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
+        .container { padding: 24px; max-width: 800px; margin: 0 auto; }
+        .hidden { display: none !important; }
+        .search-container { position: relative; margin-bottom: 24px; }
+        .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-3); }
+        input[type="text"] { width: 100%; padding: 16px 16px 16px 48px; border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--surface); color: var(--text-1); font-size: 16px; outline: none; }
+        input[type="text"]:focus { border-color: var(--brand); }
+        .card { background: var(--surface); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; display: flex; align-items: center; border: 1px solid var(--border); }
+        .card-emoji { font-size: 32px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: var(--bg); border-radius: 14px; margin-right: 16px; }
+        .card-info { flex: 1; }
+        .card-title { margin: 0 0 4px 0; font-size: 17px; font-weight: 700; color: var(--text-1); text-transform: capitalize; }
+        .card-meta { margin: 0; font-size: 13px; color: var(--text-2); }
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .b-permitido { background: var(--green-bg); color: var(--green); }
+        .b-evitar { background: var(--red-bg); color: var(--red); }
+        .b-limitado { background: var(--yellow-bg); color: var(--yellow); }
+        .b-fodmap { background: var(--border); color: var(--text-2); margin-top: 4px; display: inline-block; font-size: 10px; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; padding-bottom: var(--safe-bottom); z-index: 100; }
+        .nav-item { flex: 1; padding: 12px 0; display: flex; flex-direction: column; align-items: center; color: var(--text-3); background: none; border: none; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; stroke-width: 2; fill: none; stroke: currentColor; }
+        .nav-item.active { color: var(--brand); }
+        .plate-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg); border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border); }
+        .btn-delete { background: var(--red-bg); color: var(--red); border: none; width: 36px; height: 36px; border-radius: 10px; font-size: 18px; font-weight: bold; }
+        .btn-action { width: 100%; padding: 16px; border-radius: var(--radius-lg); border: none; background: var(--border); color: var(--text-2); font-size: 16px; font-weight: 700; margin-top: 24px; }
+        .analysis-box { padding: 16px; border-radius: 12px; margin-top: 24px; font-size: 14px; font-weight: 600; display: flex; gap: 12px; }
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 100px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s; }
+        #toast.show { visibility: visible; opacity: 1; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>FODMAP Pro</h1>
+        <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    </header>
+
+    <main>
+        <div id="viewSearch" class="container">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="mainSearch" placeholder="Buscar alimento..." oninput="debounce(handleSearch, 300)(event)">
+            </div>
+            <div id="listContainer"></div>
+        </div>
+
+        <div id="viewPlate" class="container hidden">
+            <div class="search-container">
+                <span class="search-icon">➕</span>
+                <input type="text" id="plateSearch" placeholder="Buscar para añadir..." oninput="debounce(handlePlateSearch, 300)(event)">
+            </div>
+            <div id="plateSearchResults" style="margin-bottom: 24px;"></div>
+            
+            <h2 style="font-size: 18px; color: var(--text-2); text-transform: uppercase;">Análisis Clínico</h2>
+            <div id="plateList"></div>
+            <div id="plateAnalysis" class="hidden"></div>
+            <button id="clearPlateBtn" class="btn-action hidden" onclick="clearPlate()">Vaciar Plato</button>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <button id="navSearch" class="nav-item active" onclick="switchView('Search')">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Diccionario
+        </button>
+        <button id="navPlate" class="nav-item" onclick="switchView('Plate')">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg> Simulador
+        </button>
+    </nav>
+    
+    <div id="toast"></div>
+
+    <script>
+        const rawDb = [
+            "Kiwi,naranja,mandarina,piña,limón,arándanos|Frutas|🥝|permitido|-|Máx 1/comida",
+            "Frambuesa,fresa,caqui|Frutas|🍓|limitado|Fructosa|Máx 60g",
+            "Aguacate|Frutas|🥑|limitado|Polioles|Máx 30g",
+            "Coco rallado seco,moras|Frutas|🥥|limitado|Polioles|Máx 30g",
+            "Manzana,pera,sandía,melocotón,mango|Frutas|🍎|evitar|Exceso general|Evitar",
+            "Zanahoria,espinacas,pimiento verde,pepino|Verduras|🥬|permitido|-|Libre",
+            "Edamame,calabacín,brócoli cabezas|Verduras|🥒|limitado|Fructanos|Máx 75g",
+            "Tomate cherry,calabaza|Verduras|🍅|limitado|Fructanos|Máx 50g",
+            "Champiñones,ajo,cebolla,puerro,coliflor|Verduras|🧄|evitar|Polioles/Fructanos|Evitar",
+            "Avena|Cereales|🥣|limitado|Fructanos|Máx 60g",
+            "Trigo,centeno,cebada|Cereales|🥐|evitar|Fructanos|Evitar",
+            "Leche sin lactosa,bebida vegetal|Lácteos|🥛|permitido|-|Libre",
+            "Queso curado,mozzarella,feta|Lácteos|🧀|limitado|Lactosa|Máx 40g",
+            "Leche de vaca,yogur natural|Lácteos|🐄|evitar|Lactosa|Evitar"
+        ];
+
+        const db = [];
+        rawDb.forEach(e => {
+            const [names, group, img, status, fodmap_type, limit] = e.split('|');
+            names.split(',').forEach(n => { db.push({ id: Math.random().toString(36).substr(2,9), name: n.trim(), group, img, status, fodmap_type, limit }); });
+        });
+
+        let plate = JSON.parse(localStorage.getItem('fodmap_plate')) || [];
+        if(localStorage.getItem('theme') === 'dark') { toggleTheme(true); }
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW Registrado:', reg.scope))
+                .catch(err => console.log('SW Error:', err));
+            });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById("toast"); t.innerText = msg; t.className = "show";
+            setTimeout(() => { t.className = t.className.replace("show", ""); }, 2500);
+        }
+
+        function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
+
+        function toggleTheme(forceDark = false) {
+            const html = document.documentElement;
+            let target = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            if (forceDark === true) target = 'dark';
+            html.setAttribute('data-theme', target);
+            document.querySelector('.theme-toggle').innerHTML = target === 'light' ? '🌙' : '☀️';
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', target === 'dark' ? '#111827' : '#f3f4f6');
+            localStorage.setItem('theme', target);
+        }
+
+        function switchView(view) {
+            document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('view' + view).classList.remove('hidden');
+            document.getElementById('nav' + view).classList.add('active');
+            if(view === 'Search') renderList(db);
+        }
+
+        function buildCard(i, action = null) {
+            const attr = action ? `onclick="${action}('${i.id}')" style="cursor:pointer;"` : '';
+            const tag = i.status === 'limitado' ? `<span class="badge b-fodmap">Alerta: ${i.fodmap_type}</span>` : '';
+            return `<div class="card" ${attr}><div class="card-emoji">${i.img}</div><div class="card-info"><h2 class="card-title">${i.name}</h2><p class="card-meta">${i.group} • ⚖️ ${i.limit}</p>${tag}</div><span class="badge b-${i.status}">${i.status}</span></div>`;
+        }
+
+        function handleSearch(e) { const q = e.target.value.toLowerCase().trim(); renderList(q ? db.filter(i => i.name.toLowerCase().includes(q)) : db); }
+        function renderList(items) { document.getElementById('listContainer').innerHTML = items.map(i => buildCard(i)).join(''); }
+
+        function handlePlateSearch(e) {
+            const q = e.target.value.toLowerCase().trim();
+            document.getElementById('plateSearchResults').innerHTML = (q.length < 2) ? '' : db.filter(i => i.name.toLowerCase().includes(q)).slice(0, 3).map(i => buildCard(i, 'addToPlate')).join('');
+        }
+
+        function addToPlate(id) {
+            const item = db.find(i => i.id === id);
+            if(item) { plate.push(item); localStorage.setItem('fodmap_plate', JSON.stringify(plate)); document.getElementById('plateSearch').value = ''; document.getElementById('plateSearchResults').innerHTML = ''; renderPlate(); showToast("✅ Añadido al plato"); }
+        }
+
+        function remPlate(index) { plate.splice(index, 1); localStorage.setItem('fodmap_plate', JSON.stringify(plate)); renderPlate(); }
+        function clearPlate() { plate = []; localStorage.removeItem('fodmap_plate'); renderPlate(); showToast("🗑️ Plato vaciado"); }
+
+        function renderPlate() {
+            const list = document.getElementById('plateList'); const analysis = document.getElementById('plateAnalysis'); const btn = document.getElementById('clearPlateBtn');
+            if(plate.length === 0) { list.innerHTML = `<div style="padding: 24px; text-align:center; border: 2px dashed var(--border); border-radius: var(--radius-lg);">El plato está vacío.</div>`; analysis.classList.add('hidden'); btn.classList.add('hidden'); return; }
+            btn.classList.remove('hidden');
+            list.innerHTML = plate.map((item, i) => `<div class="plate-item"><div style="display:flex; align-items:center; gap:12px;"><span style="font-size:28px;">${item.img}</span><div><div style="font-weight:700; text-transform:capitalize;">${item.name}</div><span class="badge b-${item.status}">${item.status}</span></div></div><button class="btn-delete" onclick="remPlate(${i})">×</button></div>`).join('');
+
+            let evitar = plate.filter(i => i.status === 'evitar').length; let limitados = plate.filter(i => i.status === 'limitado');
+            let grupos = {}; let apilamientoReal = false; let grupoApilado = "";
+            limitados.forEach(item => { grupos[item.fodmap_type] = (grupos[item.fodmap_type] || 0) + 1; if (grupos[item.fodmap_type] >= 2) { apilamientoReal = true; grupoApilado = item.fodmap_type; } });
+
+            analysis.classList.remove('hidden');
+            if(evitar > 0) { analysis.innerHTML = `<div class="analysis-box" style="background:var(--red-bg); color:var(--red);">🛑 <div><strong>RIESGO:</strong> Alimentos prohibidos detectados.</div></div>`; } 
+            else if(apilamientoReal) { analysis.innerHTML = `<div class="analysis-box" style="background:var(--yellow-bg); color:#b45309;">⚠️ <div><strong>STACKING CONFIRMADO:</strong> Acumulación crítica de <strong>${grupoApilado}</strong>.</div></div>`; } 
+            else { analysis.innerHTML = `<div class="analysis-box" style="background:var(--green-bg); color:#047857;">✅ <div><strong>SEGURO:</strong> Ingesta sin superposición metabólica.</div></div>`; }
+        }
+
+        renderList(db); if(plate.length > 0) renderPlate();
+    </script>
+</body>
+</html>"""
