@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FODMAP Pro V11</title>
+    <title>FODMAP Pro V12</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#f3f4f6">
@@ -12,7 +12,6 @@
     <meta name="apple-mobile-web-app-title" content="FODMAP Pro">
     <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%236366f1'/><text y='.9em' font-size='80' x='10'>🥝</text></svg>">
 
-    <!-- Librería nativa para escaneo de Códigos de Barras -->
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
@@ -25,43 +24,35 @@
         .theme-toggle { background: var(--bg); border: 1px solid var(--border); color: var(--text-1); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
         .container { padding: 24px; max-width: 800px; margin: 0 auto; }
         .hidden { display: none !important; }
-        
         .search-container { position: relative; margin-bottom: 24px; }
         .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-3); }
         input[type="text"], textarea { width: 100%; padding: 16px 16px 16px 48px; border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--surface); color: var(--text-1); font-size: 16px; outline: none; }
         textarea { padding-left: 16px; min-height: 120px; resize: vertical; line-height: 1.5; }
         input[type="text"]:focus, textarea:focus { border-color: var(--brand); }
-        
         .card { background: var(--surface); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; display: flex; align-items: center; border: 1px solid var(--border); }
         .card-emoji { font-size: 32px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: var(--bg); border-radius: 14px; margin-right: 16px; }
         .card-info { flex: 1; }
         .card-title { margin: 0 0 4px 0; font-size: 17px; font-weight: 700; color: var(--text-1); text-transform: capitalize; }
         .card-meta { margin: 0; font-size: 13px; color: var(--text-2); }
-        
         .badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
         .b-permitido { background: var(--green-bg); color: var(--green); }
         .b-evitar { background: var(--red-bg); color: var(--red); }
         .b-limitado { background: var(--yellow-bg); color: var(--yellow); }
         .b-fodmap { background: var(--border); color: var(--text-2); margin-top: 4px; display: inline-block; font-size: 10px; }
-        
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; padding-bottom: var(--safe-bottom); z-index: 100; }
         .nav-item { flex: 1; padding: 12px 0; display: flex; flex-direction: column; align-items: center; color: var(--text-3); background: none; border: none; font-size: 11px; font-weight: 600; cursor: pointer; }
         .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; stroke-width: 2; fill: none; stroke: currentColor; }
         .nav-item.active { color: var(--brand); }
-        
         .plate-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg); border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border); }
         .btn-delete { background: var(--red-bg); color: var(--red); border: none; width: 36px; height: 36px; border-radius: 10px; font-size: 18px; font-weight: bold; }
         .btn-action { width: 100%; padding: 16px; border-radius: var(--radius-lg); border: none; background: var(--brand); color: white; font-size: 16px; font-weight: 700; margin-top: 16px; cursor: pointer; }
-        
-        .analysis-box { padding: 16px; border-radius: 12px; margin-top: 24px; font-size: 14px; font-weight: 600; display: flex; gap: 12px; }
+        .analysis-box { padding: 16px; border-radius: 12px; margin-top: 24px; font-size: 14px; font-weight: 600; display: flex; flex-direction: column; gap: 12px; }
         .trigger-tag { display: inline-block; background: var(--red-bg); color: var(--red); padding: 4px 8px; border-radius: 8px; margin: 4px; font-size: 12px; border: 1px solid rgba(239, 68, 68, 0.3); }
-        
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 100px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s; }
         #toast.show { visibility: visible; opacity: 1; }
-        
-        /* Ajustes UI para escáner */
         #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 16px; display: none; border: 2px solid var(--brand); }
         #reader video { border-radius: 12px; }
+        .custom-save-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; }
     </style>
 </head>
 <body>
@@ -75,30 +66,37 @@
         <div id="viewSearch" class="container">
             <div class="search-container">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="mainSearch" placeholder="Buscar alimento base (ej. Cerdo)..." oninput="debounce(handleSearch, 300)(event)">
+                <input type="text" id="mainSearch" placeholder="Buscar alimento o marca..." oninput="debounce(handleSearch, 300)(event)">
             </div>
             <div id="listContainer"></div>
         </div>
 
-        <!-- PESTAÑA 2: AUDITOR DE ETIQUETAS Y ESCÁNER -->
+        <!-- PESTAÑA 2: AUDITOR Y GUARDADO -->
         <div id="viewScanner" class="container hidden">
             <h2 style="margin-top:0; font-size: 18px; color: var(--text-2); text-transform: uppercase;">Auditor Inteligente</h2>
             <p style="color: var(--text-2); font-size: 14px; margin-bottom: 24px;">Captura el código de barras para auto-completar los ingredientes, o pégalos manualmente.</p>
             
             <div id="reader"></div>
-            <button id="btnScan" class="btn-action" style="background: var(--text-2); margin-top: 0; margin-bottom: 16px;" onclick="startScanner()">📷 Escanear Código de Barras</button>
+            <button id="btnScan" class="btn-action" style="background: var(--text-2); margin-top: 0; margin-bottom: 16px;" onclick="startScanner()">📷 Escanear Código</button>
             
-            <textarea id="ingredientInput" placeholder="Ej: Agua carbonatada, jarabe de maíz, colorante E-150, sorbitol..."></textarea>
-            <button class="btn-action" onclick="auditIngredients()">Auditar Ingredientes</button>
+            <textarea id="ingredientInput" placeholder="Ej: Agua carbonatada, jarabe de maíz..."></textarea>
+            <button class="btn-action" onclick="auditIngredients()">Auditar Etiqueta</button>
             
             <div id="auditResult" style="margin-top: 24px;"></div>
+            
+            <!-- Zona dinámica de guardado -->
+            <div id="saveProductZone" class="custom-save-box hidden">
+                <h4 style="margin:0 0 12px 0;">Guardar este producto</h4>
+                <input type="text" id="customProductName" placeholder="Nombre o Marca del producto..." style="padding-left:16px; margin-bottom:12px;">
+                <button id="btnSaveCustom" class="btn-action" style="margin-top:0; background:var(--green);">💾 Añadir a Mis Alimentos</button>
+            </div>
         </div>
 
         <!-- PESTAÑA 3: PLATO -->
         <div id="viewPlate" class="container hidden">
             <div class="search-container">
                 <span class="search-icon">➕</span>
-                <input type="text" id="plateSearch" placeholder="Añadir ingredientes frescos..." oninput="debounce(handlePlateSearch, 300)(event)">
+                <input type="text" id="plateSearch" placeholder="Añadir frescos o marcas..." oninput="debounce(handlePlateSearch, 300)(event)">
             </div>
             <div id="plateSearchResults" style="margin-bottom: 24px;"></div>
             
@@ -124,7 +122,7 @@
     <div id="toast"></div>
 
     <script>
-        // BASE DE DATOS BÁSICA
+        // BASE DE DATOS LOCAL
         const rawDb = [
             "Arándanos,arándanos deshidratados,banana,plátano maduro,frambuesas,fresas,fruta de la pasión,granada,kiwi,lima,limón,mandarina,melón,naranja,papaya,piña,ruibarbo,tamarindo|Frutas|🥝|permitido|-|Máx 1/comida (3/día)",
             "Aguacate,coco,mandarina clementina,moras,pomelo,uvas|Frutas|🍈|limitado|Polioles/Fructosa|Moderado",
@@ -154,7 +152,6 @@
             names.split(',').forEach(n => { db.push({ id: Math.random().toString(36).substr(2,9), name: n.trim(), group, img, status, fodmap_type, limit }); });
         });
 
-        // DICCIONARIO HEURÍSTICO
         const redFlags = {
             "Fructosa": ["fructosa", "jarabe de maiz", "agave", "miel", "melaza", "zumo concentrado", "sirope", "jmaf"],
             "Lactosa": ["lactosa", "leche en polvo", "suero", "nata", "queso fresco", "leche condensada"],
@@ -162,9 +159,14 @@
             "Fructanos": ["ajo", "cebolla", "trigo", "centeno", "cebada", "inulina", "achicoria", "fructooligosacaridos", "fos", "galactooligosacaridos", "gos"]
         };
 
+        // GESTIÓN DE ESTADOS LOCALES
         let plate = JSON.parse(localStorage.getItem('fodmap_plate')) || [];
-        if(localStorage.getItem('theme') === 'dark') { toggleTheme(true); }
+        let customDb = JSON.parse(localStorage.getItem('fodmap_custom_products')) || [];
+        
+        // FUSIÓN DE DATOS (SEEN + USUARIO)
+        function getFullDb() { return [...db, ...customDb]; }
 
+        if(localStorage.getItem('theme') === 'dark') { toggleTheme(true); }
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js');
@@ -190,7 +192,7 @@
             document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('view' + view).classList.remove('hidden'); document.getElementById('nav' + view).classList.add('active');
-            if(view === 'Search') renderList(db);
+            if(view === 'Search') renderList(getFullDb());
             if(html5QrcodeScanner && view !== 'Scanner') { html5QrcodeScanner.clear(); document.getElementById('reader').style.display = 'none'; document.getElementById('btnScan').style.display = 'block'; }
         }
 
@@ -201,75 +203,97 @@
         }
 
         function handleSearch(e) { 
-            const q = e.target.value.toLowerCase().trim(); if(!q) { renderList(db); return; }
-            const res = db.filter(i => i.name.toLowerCase().includes(q) || i.group.toLowerCase().includes(q));
-            document.getElementById('listContainer').innerHTML = res.length === 0 ? `<div style="text-align:center; padding: 40px 20px; color: var(--text-2);">No encontrado en básicos.<br><br>Ve a la pestaña <strong>ETIQUETAS</strong> para auditar este envase.</div>` : res.map(i => buildCard(i)).join('');
+            const q = e.target.value.toLowerCase().trim(); const full = getFullDb();
+            if(!q) { renderList(full); return; }
+            const res = full.filter(i => i.name.toLowerCase().includes(q) || i.group.toLowerCase().includes(q));
+            document.getElementById('listContainer').innerHTML = res.length === 0 ? `<div style="text-align:center; padding: 40px 20px; color: var(--text-2);">No encontrado.<br><br>Ve a <strong>ETIQUETAS</strong> para auditar y guardar este producto.</div>` : res.map(i => buildCard(i)).join('');
         }
         function renderList(items) { document.getElementById('listContainer').innerHTML = items.map(i => buildCard(i)).join(''); }
 
-        // MOTOR DE ESCANEO DE CÓDIGO DE BARRAS
         let html5QrcodeScanner;
         function startScanner() {
             if(!navigator.onLine) { showToast("📡 Sin conexión: Usa la entrada manual."); return; }
-            document.getElementById('reader').style.display = 'block';
-            document.getElementById('btnScan').style.display = 'none';
+            document.getElementById('reader').style.display = 'block'; document.getElementById('btnScan').style.display = 'none';
             if(!html5QrcodeScanner) { html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 150} }, false); }
             html5QrcodeScanner.render(onScanSuccess, onScanFailure);
         }
 
         function onScanSuccess(decodedText, decodedResult) {
-            html5QrcodeScanner.clear();
-            document.getElementById('reader').style.display = 'none';
-            document.getElementById('btnScan').style.display = 'block';
-            showToast("⏳ Buscando en OpenFoodFacts...");
-            
-            fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`)
-            .then(r => r.json())
-            .then(data => {
-                if(data.status === 1 && data.product.ingredients_text_es || data.product.ingredients_text) {
+            html5QrcodeScanner.clear(); document.getElementById('reader').style.display = 'none'; document.getElementById('btnScan').style.display = 'block'; showToast("⏳ Buscando...");
+            fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`).then(r => r.json()).then(data => {
+                if(data.status === 1 && (data.product.ingredients_text_es || data.product.ingredients_text)) {
                     document.getElementById('ingredientInput').value = data.product.ingredients_text_es || data.product.ingredients_text;
                     auditIngredients();
-                } else {
-                    showToast("❌ Envase no registrado. Escribe los ingredientes.");
-                }
+                } else { showToast("❌ Envase no registrado. Escribe los ingredientes."); }
             }).catch(e => showToast("❌ Error de red."));
         }
-        function onScanFailure(error) { /* Ignorar hasta éxito */ }
+        function onScanFailure(error) {}
 
-        // MOTOR AUDITOR DE ETIQUETAS
         function removeAccents(str) { return str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
         
+        let lastAuditStatus = "";
+        let lastAuditTriggers = "";
+
         function auditIngredients() {
             let input = document.getElementById('ingredientInput').value.toLowerCase();
             input = removeAccents(input);
             const resDiv = document.getElementById('auditResult');
-            if(input.length < 3) { resDiv.innerHTML = `<div class="analysis-box" style="background:var(--surface); border:1px solid var(--border);">Introduce ingredientes para auditar.</div>`; return; }
+            const saveZone = document.getElementById('saveProductZone');
+            
+            if(input.length < 3) { resDiv.innerHTML = `<div class="analysis-box" style="background:var(--surface); border:1px solid var(--border);">Introduce ingredientes.</div>`; saveZone.classList.add('hidden'); return; }
 
             let foundTriggers = [];
             Object.keys(redFlags).forEach(family => {
-                redFlags[family].forEach(trigger => {
-                    if(input.includes(removeAccents(trigger))) { foundTriggers.push({ family: family, name: trigger }); }
-                });
+                redFlags[family].forEach(trigger => { if(input.includes(removeAccents(trigger))) { foundTriggers.push({ family: family, name: trigger }); } });
             });
 
             if(foundTriggers.length === 0) {
-                resDiv.innerHTML = `<div class="analysis-box" style="background:var(--green-bg); color:#047857; border: 1px solid #34d399;">✅ <div><strong>PRODUCTO LIMPIO:</strong> No se han detectado ingredientes FODMAP ocultos.</div></div>`;
+                resDiv.innerHTML = `<div class="analysis-box" style="background:var(--green-bg); color:#047857; border: 1px solid #34d399;"><div>✅ <strong>PRODUCTO LIMPIO</strong></div></div>`;
+                lastAuditStatus = "permitido"; lastAuditTriggers = "-";
             } else {
                 let tagsHTML = foundTriggers.map(t => `<span class="trigger-tag"><strong>${t.name}</strong> (${t.family})</span>`).join('');
                 resDiv.innerHTML = `<div class="analysis-box" style="background:var(--red-bg); color:var(--red); border: 1px solid rgba(239, 68, 68, 0.3); display:block;">
-                    <div style="display:flex; gap:8px; margin-bottom:12px;">🛑 <strong>PRODUCTO RECHAZADO: EVITAR</strong></div>
-                    <p style="margin:0 0 12px 0; color:var(--text-1); font-weight:normal;">Se detectaron aditivos fermentables:</p><div>${tagsHTML}</div></div>`;
+                    <div style="display:flex; gap:8px; margin-bottom:12px;">🛑 <strong>EVITAR:</strong></div>
+                    <div>${tagsHTML}</div></div>`;
+                lastAuditStatus = "evitar"; lastAuditTriggers = foundTriggers.map(t => t.family).join("/");
             }
-            showToast("🔍 Etiqueta auditada");
+            
+            saveZone.classList.remove('hidden');
+            document.getElementById('btnSaveCustom').onclick = () => saveCustomProduct();
+        }
+
+        function saveCustomProduct() {
+            const pName = document.getElementById('customProductName').value.trim();
+            if(!pName) { showToast("⚠️ Ponle un nombre o marca"); return; }
+            
+            const newProduct = {
+                id: Math.random().toString(36).substr(2,9),
+                name: pName,
+                group: "Añadido por ti",
+                img: "🏷️",
+                status: lastAuditStatus,
+                fodmap_type: lastAuditTriggers,
+                limit: "Basado en algoritmo"
+            };
+            
+            customDb.push(newProduct);
+            localStorage.setItem('fodmap_custom_products', JSON.stringify(customDb));
+            
+            document.getElementById('customProductName').value = '';
+            document.getElementById('ingredientInput').value = '';
+            document.getElementById('auditResult').innerHTML = '';
+            document.getElementById('saveProductZone').classList.add('hidden');
+            
+            showToast("💾 Guardado en tu diccionario");
         }
 
         function handlePlateSearch(e) {
-            const q = e.target.value.toLowerCase().trim();
-            document.getElementById('plateSearchResults').innerHTML = (q.length < 2) ? '' : db.filter(i => i.name.toLowerCase().includes(q)).slice(0, 3).map(i => buildCard(i, 'addToPlate')).join('');
+            const q = e.target.value.toLowerCase().trim(); const full = getFullDb();
+            document.getElementById('plateSearchResults').innerHTML = (q.length < 2) ? '' : full.filter(i => i.name.toLowerCase().includes(q)).slice(0, 4).map(i => buildCard(i, 'addToPlate')).join('');
         }
 
         function addToPlate(id) {
-            const item = db.find(i => i.id === id);
+            const full = getFullDb(); const item = full.find(i => i.id === id);
             if(item) { plate.push(item); localStorage.setItem('fodmap_plate', JSON.stringify(plate)); document.getElementById('plateSearch').value = ''; document.getElementById('plateSearchResults').innerHTML = ''; renderPlate(); showToast("✅ Añadido al plato"); }
         }
         function remPlate(index) { plate.splice(index, 1); localStorage.setItem('fodmap_plate', JSON.stringify(plate)); renderPlate(); }
@@ -291,7 +315,7 @@
             else { analysis.innerHTML = `<div class="analysis-box" style="background:var(--green-bg); color:#047857;">✅ <div><strong>SEGURO:</strong> Ingesta sin superposición metabólica.</div></div>`; }
         }
 
-        renderList(db); if(plate.length > 0) renderPlate();
+        renderList(getFullDb()); if(plate.length > 0) renderPlate();
     </script>
 </body>
 </html>
