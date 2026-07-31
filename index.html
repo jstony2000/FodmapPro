@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FODMAP Pro V10</title>
+    <title>FODMAP Pro V11</title>
     
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#f3f4f6">
@@ -11,6 +11,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="FODMAP Pro">
     <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%236366f1'/><text y='.9em' font-size='80' x='10'>🥝</text></svg>">
+
+    <!-- Librería nativa para escaneo de Códigos de Barras -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
         :root { --brand: #6366f1; --bg: #f3f4f6; --surface: #ffffff; --text-1: #111827; --text-2: #4b5563; --text-3: #9ca3af; --border: #e5e7eb; --green: #10b981; --green-bg: #ecfdf5; --red: #ef4444; --red-bg: #fef2f2; --yellow: #f59e0b; --yellow-bg: #fffbeb; --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --radius-lg: 16px; --safe-bottom: env(safe-area-inset-bottom, 20px); }
@@ -55,6 +58,10 @@
         
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 100px; transform: translateX(-50%); font-size: 14px; opacity: 0; transition: opacity 0.3s; }
         #toast.show { visibility: visible; opacity: 1; }
+        
+        /* Ajustes UI para escáner */
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 16px; display: none; border: 2px solid var(--brand); }
+        #reader video { border-radius: 12px; }
     </style>
 </head>
 <body>
@@ -73,13 +80,16 @@
             <div id="listContainer"></div>
         </div>
 
-        <!-- PESTAÑA 2: AUDITOR DE ETIQUETAS (NUEVO) -->
+        <!-- PESTAÑA 2: AUDITOR DE ETIQUETAS Y ESCÁNER -->
         <div id="viewScanner" class="container hidden">
-            <h2 style="margin-top:0; font-size: 18px; color: var(--text-2); text-transform: uppercase;">Auditor de Procesados</h2>
-            <p style="color: var(--text-2); font-size: 14px; margin-bottom: 24px;">Pega los ingredientes de cualquier producto (bebidas, salsas, snacks) para detectar FODMAPs ocultos.</p>
+            <h2 style="margin-top:0; font-size: 18px; color: var(--text-2); text-transform: uppercase;">Auditor Inteligente</h2>
+            <p style="color: var(--text-2); font-size: 14px; margin-bottom: 24px;">Captura el código de barras para auto-completar los ingredientes, o pégalos manualmente.</p>
+            
+            <div id="reader"></div>
+            <button id="btnScan" class="btn-action" style="background: var(--text-2); margin-top: 0; margin-bottom: 16px;" onclick="startScanner()">📷 Escanear Código de Barras</button>
             
             <textarea id="ingredientInput" placeholder="Ej: Agua carbonatada, jarabe de maíz, colorante E-150, sorbitol..."></textarea>
-            <button class="btn-action" onclick="auditIngredients()">Auditar Etiqueta</button>
+            <button class="btn-action" onclick="auditIngredients()">Auditar Ingredientes</button>
             
             <div id="auditResult" style="margin-top: 24px;"></div>
         </div>
@@ -114,7 +124,7 @@
     <div id="toast"></div>
 
     <script>
-        // BASE DE DATOS FRESCOS Y BÁSICOS SEEN
+        // BASE DE DATOS BÁSICA
         const rawDb = [
             "Arándanos,arándanos deshidratados,banana,plátano maduro,frambuesas,fresas,fruta de la pasión,granada,kiwi,lima,limón,mandarina,melón,naranja,papaya,piña,ruibarbo,tamarindo|Frutas|🥝|permitido|-|Máx 1/comida (3/día)",
             "Aguacate,coco,mandarina clementina,moras,pomelo,uvas|Frutas|🍈|limitado|Polioles/Fructosa|Moderado",
@@ -144,7 +154,7 @@
             names.split(',').forEach(n => { db.push({ id: Math.random().toString(36).substr(2,9), name: n.trim(), group, img, status, fodmap_type, limit }); });
         });
 
-        // DICCIONARIO HEURÍSTICO PARA ETIQUETAS
+        // DICCIONARIO HEURÍSTICO
         const redFlags = {
             "Fructosa": ["fructosa", "jarabe de maiz", "agave", "miel", "melaza", "zumo concentrado", "sirope", "jmaf"],
             "Lactosa": ["lactosa", "leche en polvo", "suero", "nata", "queso fresco", "leche condensada"],
@@ -155,16 +165,12 @@
         let plate = JSON.parse(localStorage.getItem('fodmap_plate')) || [];
         if(localStorage.getItem('theme') === 'dark') { toggleTheme(true); }
 
-    if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js');
                 let refreshing = false;
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!refreshing) { 
-                        refreshing = true; 
-                        showToast("🔄 Actualizando base de datos..."); 
-                        setTimeout(() => window.location.reload(), 1500); 
-                    }
+                    if (!refreshing) { refreshing = true; showToast("🔄 Actualizando app..."); setTimeout(() => window.location.reload(), 1500); }
                 });
             });
         }
@@ -185,6 +191,7 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('view' + view).classList.remove('hidden'); document.getElementById('nav' + view).classList.add('active');
             if(view === 'Search') renderList(db);
+            if(html5QrcodeScanner && view !== 'Scanner') { html5QrcodeScanner.clear(); document.getElementById('reader').style.display = 'none'; document.getElementById('btnScan').style.display = 'block'; }
         }
 
         function buildCard(i, action = null) {
@@ -196,9 +203,38 @@
         function handleSearch(e) { 
             const q = e.target.value.toLowerCase().trim(); if(!q) { renderList(db); return; }
             const res = db.filter(i => i.name.toLowerCase().includes(q) || i.group.toLowerCase().includes(q));
-            document.getElementById('listContainer').innerHTML = res.length === 0 ? `<div style="text-align:center; padding: 40px 20px; color: var(--text-2);">No encontrado en básicos.<br><br>Ve a la pestaña <strong>ETIQUETAS</strong> para analizar este producto comercial.</div>` : res.map(i => buildCard(i)).join('');
+            document.getElementById('listContainer').innerHTML = res.length === 0 ? `<div style="text-align:center; padding: 40px 20px; color: var(--text-2);">No encontrado en básicos.<br><br>Ve a la pestaña <strong>ETIQUETAS</strong> para auditar este envase.</div>` : res.map(i => buildCard(i)).join('');
         }
         function renderList(items) { document.getElementById('listContainer').innerHTML = items.map(i => buildCard(i)).join(''); }
+
+        // MOTOR DE ESCANEO DE CÓDIGO DE BARRAS
+        let html5QrcodeScanner;
+        function startScanner() {
+            if(!navigator.onLine) { showToast("📡 Sin conexión: Usa la entrada manual."); return; }
+            document.getElementById('reader').style.display = 'block';
+            document.getElementById('btnScan').style.display = 'none';
+            if(!html5QrcodeScanner) { html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 150} }, false); }
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            html5QrcodeScanner.clear();
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('btnScan').style.display = 'block';
+            showToast("⏳ Buscando en OpenFoodFacts...");
+            
+            fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`)
+            .then(r => r.json())
+            .then(data => {
+                if(data.status === 1 && data.product.ingredients_text_es || data.product.ingredients_text) {
+                    document.getElementById('ingredientInput').value = data.product.ingredients_text_es || data.product.ingredients_text;
+                    auditIngredients();
+                } else {
+                    showToast("❌ Envase no registrado. Escribe los ingredientes.");
+                }
+            }).catch(e => showToast("❌ Error de red."));
+        }
+        function onScanFailure(error) { /* Ignorar hasta éxito */ }
 
         // MOTOR AUDITOR DE ETIQUETAS
         function removeAccents(str) { return str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
@@ -207,29 +243,22 @@
             let input = document.getElementById('ingredientInput').value.toLowerCase();
             input = removeAccents(input);
             const resDiv = document.getElementById('auditResult');
-            
             if(input.length < 3) { resDiv.innerHTML = `<div class="analysis-box" style="background:var(--surface); border:1px solid var(--border);">Introduce ingredientes para auditar.</div>`; return; }
 
             let foundTriggers = [];
-            
             Object.keys(redFlags).forEach(family => {
                 redFlags[family].forEach(trigger => {
-                    const cleanTrigger = removeAccents(trigger);
-                    if(input.includes(cleanTrigger)) {
-                        foundTriggers.push({ family: family, name: trigger });
-                    }
+                    if(input.includes(removeAccents(trigger))) { foundTriggers.push({ family: family, name: trigger }); }
                 });
             });
 
             if(foundTriggers.length === 0) {
-                resDiv.innerHTML = `<div class="analysis-box" style="background:var(--green-bg); color:#047857; border: 1px solid #34d399;">✅ <div><strong>PRODUCTO LIMPIO:</strong> No se han detectado ingredientes FODMAP ocultos en esta etiqueta.</div></div>`;
+                resDiv.innerHTML = `<div class="analysis-box" style="background:var(--green-bg); color:#047857; border: 1px solid #34d399;">✅ <div><strong>PRODUCTO LIMPIO:</strong> No se han detectado ingredientes FODMAP ocultos.</div></div>`;
             } else {
                 let tagsHTML = foundTriggers.map(t => `<span class="trigger-tag"><strong>${t.name}</strong> (${t.family})</span>`).join('');
                 resDiv.innerHTML = `<div class="analysis-box" style="background:var(--red-bg); color:var(--red); border: 1px solid rgba(239, 68, 68, 0.3); display:block;">
                     <div style="display:flex; gap:8px; margin-bottom:12px;">🛑 <strong>PRODUCTO RECHAZADO: EVITAR</strong></div>
-                    <p style="margin:0 0 12px 0; color:var(--text-1); font-weight:normal;">Se han detectado aditivos que causan fermentación intestinal:</p>
-                    <div>${tagsHTML}</div>
-                </div>`;
+                    <p style="margin:0 0 12px 0; color:var(--text-1); font-weight:normal;">Se detectaron aditivos fermentables:</p><div>${tagsHTML}</div></div>`;
             }
             showToast("🔍 Etiqueta auditada");
         }
