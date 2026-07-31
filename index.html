@@ -155,7 +155,19 @@
         let plate = JSON.parse(localStorage.getItem('fodmap_plate')) || [];
         if(localStorage.getItem('theme') === 'dark') { toggleTheme(true); }
 
-        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }
+    if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js');
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!refreshing) { 
+                        refreshing = true; 
+                        showToast("🔄 Actualizando base de datos..."); 
+                        setTimeout(() => window.location.reload(), 1500); 
+                    }
+                });
+            });
+        }
 
         function showToast(msg) { const t = document.getElementById("toast"); t.innerText = msg; t.className = "show"; setTimeout(() => { t.className = t.className.replace("show", ""); }, 2500); }
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
