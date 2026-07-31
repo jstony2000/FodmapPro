@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fodmap-cache-v10';
+const CACHE_NAME = 'fodmap-cache-v11';
 const urlsToCache = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', event => { 
